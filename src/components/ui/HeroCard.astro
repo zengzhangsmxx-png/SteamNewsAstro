@@ -1,0 +1,54 @@
+---
+import { siteConfig } from '../../../site.config';
+
+interface Props {
+  title: string;
+  description: string;
+  heroImage: string;
+  heroImageAlt: string;
+  category: string;
+  publishDate: Date;
+  readingTime: number;
+  slug: string;
+  collection: string;
+  gameTitle: string;
+}
+
+const {
+  title, description, heroImage, heroImageAlt,
+  category, publishDate, readingTime, slug,
+  collection, gameTitle,
+} = Astro.props;
+
+const categoryConfig = siteConfig.categories.find(c => c.slug === category);
+const categoryColor = categoryConfig?.color || '#66c0f4';
+const href = `/${collection}/${slug}`;
+const dateStr = publishDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+---
+
+<a href={href} class="group relative block overflow-hidden rounded-xl aspect-[16/10]">
+  <img
+    src={heroImage}
+    alt={heroImageAlt}
+    class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+    loading="eager"
+  />
+  <div class="absolute inset-0 bg-gradient-to-t from-void via-void/50 to-transparent" />
+  <div class="absolute bottom-0 left-0 right-0 p-6">
+    <div class="flex items-center gap-3 mb-3">
+      <span
+        class="badge text-xs uppercase tracking-wider"
+        style={`background: ${categoryColor}20; color: ${categoryColor}; border-color: ${categoryColor}40;`}
+      >
+        {categoryConfig?.label || category}
+      </span>
+      <span class="text-text-secondary text-xs">{dateStr}</span>
+      <span class="text-text-muted text-xs">·</span>
+      <span class="text-text-secondary text-xs">{readingTime} min</span>
+    </div>
+    <h2 class="font-display font-bold text-2xl md:text-3xl leading-tight text-text-primary group-hover:text-steam transition-colors text-balance">
+      {title}
+    </h2>
+    <p class="mt-2 text-text-secondary text-sm line-clamp-2 max-w-xl">{description}</p>
+  </div>
+</a>

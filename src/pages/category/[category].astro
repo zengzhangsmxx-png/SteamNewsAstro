@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ui/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+import { siteConfig } from '../../../site.config';
+
+export async function getStaticPaths() {
+  const allNews = await getCollection('news', ({ data }) => !data.draft);
+  const allReviews = await getCollection('reviews', ({ data }) => !data.draft);
+  const allGuides = await getCollection('guides', ({ data }) => !data.draft);
+
+  const categories = siteConfig.categories.map(c => c.slug);
+
+  return categories.map(category => {
+    const newsForCat = allNews.filter(p => p.data.category === category).map(p => ({ ...p, _collection: 'news' as const }));
+    const reviewsForCat = allReviews.filter(p => p.data.category === category).map(p => ({ ...p, _collection: 'reviews' as const }));
+    const guidesForCat = allGuides.filter(p => p.data.category === category).map(p => ({ ...p, _collection: 'guides' as const }));
+
+    const posts = [...newsForCat, ...reviewsForCat, ...guidesForCat]
+      .sort((a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime());
+
+    return {
+      params: { category },
+      props: { posts, category },
+    };
+  });
+}
+
+const { posts, category } = Astro.props;
+const categoryConfig = siteConfig.categories.find(c => c.slug === category);
+const label = categoryConfig?.label || category;
+---
+
+<BaseLayout
+  title={label}
+  description={`Browse all ${label.toLowerCase()} articles on ${siteConfig.name}`}
+>
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-8">
+    <h1 class="font-display font-bold text-4xl mb-2">{label}</h1>
+    <p class="text-text-secondary mb-8">{posts.length} article{posts.length !== 1 ? 's' : ''}</p>
+
+    {posts.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts.map((post: any) => (
+          <ArticleCard
+            title={post.data.title}
+            description={post.data.description}
+            heroImage={post.data.heroImage}
+            heroImageAlt={post.data.heroImageAlt}
+            category={post.data.category}
+            publishDate={post.data.publishDate}
+            readingTime={post.data.readingTime}
+            slug={post.slug}
+            collection={post._collection}
+            gameTitle={post.data.gameTitle}
+          />
+        ))}
+      </div>
+    ) : (
+      <p class="text-text-muted text-center py-16">No articles in this category yet.</p>
+    )}
+  </div>
+</BaseLayout>

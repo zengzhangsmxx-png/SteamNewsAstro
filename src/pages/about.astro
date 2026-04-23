@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../../site.config';
+---
+
+<BaseLayout
+  title="About"
+  description={`Learn more about ${siteConfig.name}`}
+>
+  <div class="max-w-3xl mx-auto px-4 md:px-6 py-12">
+    <h1 class="font-display font-bold text-4xl mb-6">About {siteConfig.name}</h1>
+
+    <div class="prose prose-lg prose-invert">
+      <p>
+        {siteConfig.name} is your daily source for Steam gaming news, reviews, and guides.
+        We cover the latest PC game releases, updates, and community highlights from the Steam platform.
+      </p>
+
+      <h2>What We Cover</h2>
+      <ul>
+        <li><strong>News</strong> — Breaking news, updates, and announcements from Steam games</li>
+        <li><strong>Reviews</strong> — In-depth game reviews with honest ratings</li>
+        <li><strong>Guides</strong> — Tutorials, tips, and strategies for popular Steam titles</li>
+      </ul>
+
+      <h2>Our Mission</h2>
+      <p>
+        We aim to provide timely, accurate, and engaging content for the Steam gaming community.
+        Whether you're looking for the latest news, deciding what to play next, or seeking help
+        with a challenging game, we've got you covered.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Have feedback or suggestions? We'd love to hear from you. Reach out via our social channels
+        or check our <a href="/rss.xml">RSS feed</a> to stay updated.
+      </p>
+    </div>
+  </div>
+</BaseLayout>

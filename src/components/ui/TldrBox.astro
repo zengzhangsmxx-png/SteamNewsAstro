@@ -1,0 +1,14 @@
+---
+interface Props {
+  text: string;
+}
+
+const { text } = Astro.props;
+---
+
+<div class="mb-8 p-5 rounded-xl bg-steam/5 border border-steam/20">
+  <div class="flex items-start gap-3">
+    <span class="text-steam font-display font-bold text-sm uppercase tracking-wider shrink-0 mt-0.5">TL;DR</span>
+    <p class="text-text-primary text-sm leading-relaxed">{text}</p>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+---
+import ArticleCard from './ArticleCard.astro';
+import { getCollection } from 'astro:content';
+
+interface Props {
+  currentSlug: string;
+  tags: string[];
+  collection: 'news' | 'reviews' | 'guides';
+  limit?: number;
+}
+
+const { currentSlug, tags, collection, limit = 3 } = Astro.props;
+
+const allPosts = await getCollection(collection, ({ data }) => !data.draft);
+
+// Score posts by tag overlap
+const scored = allPosts
+  .filter(p => p.slug !== currentSlug)
+  .map(p => {
+    const overlap = p.data.tags.filter(t => tags.includes(t)).length;
+    return { post: p, score: overlap };
+  })
+  .sort((a, b) => b.score - a.score || b.post.data.publishDate.getTime() - a.post.data.publishDate.getTime())
+  .slice(0, limit);
+---
+
+{scored.length > 0 && (
+  <section class="mt-12 pt-8 border-t border-border-subtle">
+    <h2 class="font-display font-bold text-2xl mb-6">Related Articles</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {scored.map(({ post }) => (
+        <ArticleCard
+          title={post.data.title}
+          description={post.data.description}
+          heroImage={post.data.heroImage}
+          heroImageAlt={post.data.heroImageAlt}
+          category={post.data.category}
+          publishDate={post.data.publishDate}
+          readingTime={post.data.readingTime}
+          slug={post.slug}
+          collection={collection}
+          gameTitle={post.data.gameTitle}
+        />
+      ))}
+    </div>
+  </section>
+)}

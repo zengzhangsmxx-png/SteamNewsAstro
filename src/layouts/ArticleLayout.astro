@@ -1,0 +1,211 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumbs from '../components/seo/Breadcrumbs.astro';
+import TldrBox from '../components/ui/TldrBox.astro';
+import FaqSection from '../components/ui/FaqSection.astro';
+import Sidebar from '../components/ui/Sidebar.astro';
+import TagChip from '../components/ui/TagChip.astro';
+import ReadingProgress from '../components/ui/ReadingProgress.astro';
+import TableOfContents from '../components/ui/TableOfContents.astro';
+import RelatedArticles from '../components/ui/RelatedArticles.astro';
+import { siteConfig } from '../../site.config';
+import { format } from 'date-fns';
+
+interface Props {
+  title: string;
+  description: string;
+  publishDate: Date;
+  updatedDate?: Date;
+  heroImage: string;
+  heroImageAlt: string;
+  category: string;
+  tags: string[];
+  gameTitle: string;
+  steamAppId?: number;
+  author: { name: string; bio: string; avatar?: string };
+  readingTime: number;
+  tldr?: string;
+  faq?: { question: string; answer: string }[];
+  rating?: number;
+  pros?: string[];
+  cons?: string[];
+  collection: 'news' | 'reviews' | 'guides';
+  headings?: { depth: number; slug: string; text: string }[];
+}
+
+const {
+  title, description, publishDate, updatedDate,
+  heroImage, heroImageAlt, category, tags,
+  gameTitle, steamAppId, author, readingTime,
+  tldr, faq, rating, pros, cons, collection,
+  headings = [],
+} = Astro.props;
+
+const breadcrumbItems = [
+  { label: collection.charAt(0).toUpperCase() + collection.slice(1), href: `/${collection}` },
+  { label: title, href: Astro.url.pathname },
+];
+
+const schemaBreadcrumbs = [
+  { name: 'Home', url: siteConfig.url },
+  { name: collection.charAt(0).toUpperCase() + collection.slice(1), url: `${siteConfig.url}/${collection}` },
+  { name: title, url: `${siteConfig.url}${Astro.url.pathname}` },
+];
+
+const categoryConfig = siteConfig.categories.find(c => c.slug === category);
+const categoryColor = categoryConfig?.color || '#66c0f4';
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  type={rating !== undefined ? 'review' : 'article'}
+  image={heroImage}
+  imageAlt={heroImageAlt}
+  publishDate={publishDate}
+  updatedDate={updatedDate}
+  author={author}
+  tags={tags}
+  gameTitle={gameTitle}
+  steamAppId={steamAppId}
+  rating={rating}
+  faq={faq}
+  breadcrumbs={schemaBreadcrumbs}
+>
+  <ReadingProgress />
+
+  <!-- Hero -->
+  <div class="relative w-full h-[40vh] min-h-[320px] max-h-[480px] overflow-hidden">
+    <img
+      src={heroImage}
+      alt={heroImageAlt}
+      class="w-full h-full object-cover"
+      loading="eager"
+    />
+    <div class="absolute inset-0 bg-gradient-to-t from-void via-void/60 to-transparent" />
+    <div class="absolute bottom-0 left-0 right-0 p-6 md:p-10 max-w-5xl mx-auto">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="badge text-xs uppercase tracking-wider" style={`background: ${categoryColor}20; color: ${categoryColor}; border-color: ${categoryColor}40;`}>
+          {categoryConfig?.label || category}
+        </span>
+        {steamAppId && (
+          <a href={`https://store.steampowered.com/app/${steamAppId}`} target="_blank" rel="noopener noreferrer"
+            class="badge badge-steam text-xs hover:bg-steam/20 transition-colors">
+            Steam Store &nearr;
+          </a>
+        )}
+        <span class="text-text-secondary text-sm">{readingTime} min read</span>
+      </div>
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-display font-bold leading-tight text-balance">
+        {title}
+      </h1>
+    </div>
+  </div>
+
+  <!-- Content area -->
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-8">
+    <div class="mb-6">
+      <Breadcrumbs items={breadcrumbItems} />
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-10">
+      <!-- Main content -->
+      <article class="flex-1 min-w-0 max-w-3xl">
+        <!-- Author + date -->
+        <div class="flex items-center gap-4 mb-8 pb-6 border-b border-border-subtle">
+          <div class="w-10 h-10 rounded-full bg-elevated flex items-center justify-center text-steam font-display font-bold text-lg">
+            {author.name.charAt(0)}
+          </div>
+          <div>
+            <p class="text-text-primary font-medium">{author.name}</p>
+            <p class="text-text-secondary text-sm">
+              {format(publishDate, 'MMM d, yyyy')}
+              {updatedDate && <span> · Updated {format(updatedDate, 'MMM d, yyyy')}</span>}
+            </p>
+          </div>
+          {steamAppId && (
+            <a href={`https://store.steampowered.com/app/${steamAppId}`} target="_blank" rel="noopener noreferrer"
+              class="ml-auto hidden sm:inline-flex btn btn-secondary text-xs gap-1.5">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+              View on Steam
+            </a>
+          )}
+        </div>
+
+        <!-- TL;DR -->
+        {tldr && <TldrBox text={tldr} />}
+
+        <!-- Review score -->
+        {rating !== undefined && (
+          <div class="mb-8 p-6 card-elevated rounded-xl flex flex-col sm:flex-row items-center gap-6">
+            <div class="text-center sm:text-left">
+              <div class="text-5xl font-display font-bold" style={`color: ${rating >= 7 ? '#4ade80' : rating >= 5 ? '#fbbf24' : '#ef4444'}`}>
+                {rating}<span class="text-2xl text-text-muted">/10</span>
+              </div>
+              <p class="text-text-muted text-xs mt-1 uppercase tracking-wider">
+                {rating >= 9 ? 'Must Play' : rating >= 7 ? 'Great' : rating >= 5 ? 'Average' : 'Below Average'}
+              </p>
+            </div>
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm w-full">
+              {pros && pros.length > 0 && (
+                <div>
+                  <p class="text-accent-success font-medium mb-1.5">Pros</p>
+                  <ul class="space-y-1 text-text-secondary">
+                    {pros.map(p => <li class="flex items-start gap-1.5"><span class="text-accent-success mt-0.5 shrink-0">+</span> {p}</li>)}
+                  </ul>
+                </div>
+              )}
+              {cons && cons.length > 0 && (
+                <div>
+                  <p class="text-accent-danger font-medium mb-1.5">Cons</p>
+                  <ul class="space-y-1 text-text-secondary">
+                    {cons.map(c => <li class="flex items-start gap-1.5"><span class="text-accent-danger mt-0.5 shrink-0">-</span> {c}</li>)}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <!-- Table of Contents -->
+        <TableOfContents headings={headings} />
+
+        <!-- Article body -->
+        <div class="prose prose-lg prose-invert max-w-none">
+          <slot />
+        </div>
+
+        <!-- Tags -->
+        <div class="mt-10 pt-6 border-t border-border-subtle flex flex-wrap gap-2">
+          {tags.map(tag => <TagChip tag={tag} />)}
+        </div>
+
+        <!-- FAQ -->
+        {faq && faq.length > 0 && <FaqSection items={faq} />}
+
+        <!-- Author bio -->
+        <div class="mt-10 p-6 card rounded-xl">
+          <div class="flex items-start gap-4">
+            <div class="w-14 h-14 rounded-full bg-elevated flex items-center justify-center text-steam font-display font-bold text-xl shrink-0">
+              {author.name.charAt(0)}
+            </div>
+            <div>
+              <p class="font-display font-semibold text-lg">{author.name}</p>
+              <p class="text-text-secondary text-sm mt-1">{author.bio}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Related Articles -->
+        <RelatedArticles currentSlug={Astro.url.pathname.split('/').filter(Boolean).pop() || ''} tags={tags} collection={collection} />
+      </article>
+
+      <!-- Sidebar -->
+      <aside class="w-full lg:w-72 shrink-0">
+        <div class="lg:sticky lg:top-20">
+          <Sidebar />
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Exo+2:wght@400;500&family=JetBrains+Mono:wght@400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+
+  :root {
+    --bg-void: #0b0d12;
+    --bg-surface: #12151c;
+    --bg-elevated: #1a1e28;
+    --bg-overlay: #222733;
+
+    --text-primary: #e4e8f1;
+    --text-secondary: #8b93a7;
+    --text-muted: #4a5168;
+
+    --accent-steam: #66c0f4;
+    --accent-glow: #1b9de2;
+    --accent-hot: #ff6b35;
+
+    --border-subtle: #1e2230;
+    --border-accent: rgba(102, 192, 244, 0.15);
+  }
+
+  * {
+    @apply border-border-subtle;
+  }
+
+  body {
+    @apply bg-void text-text-primary font-body antialiased;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(102, 192, 244, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(255, 107, 53, 0.03) 0px, transparent 50%);
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold text-text-primary;
+  }
+
+  a {
+    @apply text-steam hover:text-steam-deep transition-colors duration-200;
+  }
+
+  code {
+    @apply font-mono text-sm bg-surface px-1.5 py-0.5 rounded;
+  }
+
+  pre {
+    @apply bg-surface border border-border-subtle rounded-lg p-4 overflow-x-auto;
+  }
+
+  pre code {
+    @apply bg-transparent p-0;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-border-subtle rounded-lg overflow-hidden transition-all duration-300;
+  }
+
+  .card:hover {
+    @apply border-steam-glow transform -translate-y-0.5;
+  }
+
+  .card-elevated {
+    @apply bg-elevated border border-border-accent;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-steam text-void hover:bg-steam-deep;
+  }
+
+  .btn-secondary {
+    @apply bg-surface border border-border-accent text-text-primary hover:bg-elevated;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-steam {
+    @apply bg-steam/10 text-steam border border-steam/20;
+  }
+
+  .badge-hot {
+    @apply bg-hot/10 text-hot border border-hot/20;
+  }
+
+  .glass {
+    @apply backdrop-blur-xl bg-surface/80 border border-border-accent;
+  }
+
+  .glow-border {
+    @apply border border-steam-glow shadow-[0_0_15px_rgba(102,192,244,0.1)];
+  }
+
+  .category-news { @apply border-l-4 border-l-steam; }
+  .category-update { @apply border-l-4 border-l-steam-deep; }
+  .category-release { @apply border-l-4 border-l-accent-success; }
+  .category-event { @apply border-l-4 border-l-accent-purple; }
+  .category-esports { @apply border-l-4 border-l-accent-warning; }
+  .category-review { @apply border-l-4 border-l-hot; }
+  .category-guide { @apply border-l-4 border-l-emerald-400; }
+  .category-tutorial { @apply border-l-4 border-l-sky-400; }
+  .category-tips { @apply border-l-4 border-l-violet-400; }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

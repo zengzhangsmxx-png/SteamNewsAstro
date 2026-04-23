@@ -1,0 +1,29 @@
+---
+/**
+ * Reading progress bar — thin accent line at top of viewport.
+ * Pure CSS + inline JS, zero framework dependency.
+ */
+---
+
+<div id="reading-progress" class="fixed top-16 left-0 right-0 z-40 h-0.5 pointer-events-none">
+  <div id="reading-bar" class="h-full bg-steam origin-left" style="transform: scaleX(0); transition: transform 80ms linear;"></div>
+</div>
+
+<script is:inline>
+  (function() {
+    var bar = document.getElementById('reading-bar');
+    if (!bar) return;
+    var ticking = false;
+    function update() {
+      var scrollTop = window.scrollY;
+      var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      var progress = docHeight > 0 ? Math.min(scrollTop / docHeight, 1) : 0;
+      bar.style.transform = 'scaleX(' + progress + ')';
+      ticking = false;
+    }
+    window.addEventListener('scroll', function() {
+      if (!ticking) { requestAnimationFrame(update); ticking = true; }
+    }, { passive: true });
+    update();
+  })();
+</script>

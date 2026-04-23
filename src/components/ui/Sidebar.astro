@@ -1,0 +1,60 @@
+---
+import { getCollection } from 'astro:content';
+import TagChip from './TagChip.astro';
+
+const allNews = await getCollection('news', ({ data }) => !data.draft);
+const allReviews = await getCollection('reviews', ({ data }) => !data.draft);
+
+const trending = [...allNews, ...allReviews]
+  .sort((a, b) => b.data.publishDate.getTime() - a.data.publishDate.getTime())
+  .slice(0, 5);
+
+const allTags = [...new Set([
+  ...allNews.flatMap(p => p.data.tags),
+  ...allReviews.flatMap(p => p.data.tags),
+])].slice(0, 12);
+---
+
+<div class="space-y-8">
+  <!-- Trending -->
+  <div class="card p-5">
+    <h3 class="font-display font-bold text-sm uppercase tracking-wider text-steam mb-4">Trending Now</h3>
+    <ol class="space-y-3">
+      {trending.map((post, i) => {
+        const collection = 'rating' in post.data ? 'reviews' : 'news';
+        return (
+          <li class="flex items-start gap-3">
+            <span class="font-display font-bold text-lg text-text-muted w-6 shrink-0">{i + 1}</span>
+            <a
+              href={`/${collection}/${post.slug}`}
+              class="text-sm text-text-secondary hover:text-steam transition-colors leading-snug"
+            >
+              {post.data.title}
+            </a>
+          </li>
+        );
+      })}
+    </ol>
+  </div>
+
+  <!-- Tags -->
+  <div class="card p-5">
+    <h3 class="font-display font-bold text-sm uppercase tracking-wider text-steam mb-4">Popular Tags</h3>
+    <div class="flex flex-wrap gap-2">
+      {allTags.map(tag => <TagChip tag={tag} />)}
+    </div>
+  </div>
+
+  <!-- Steam link -->
+  <div class="card p-5 text-center">
+    <p class="text-text-muted text-xs mb-2">Powered by</p>
+    <a
+      href="https://store.steampowered.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="font-display font-bold text-steam hover:text-steam-deep transition-colors"
+    >
+      Steam Store
+    </a>
+  </div>
+</div>

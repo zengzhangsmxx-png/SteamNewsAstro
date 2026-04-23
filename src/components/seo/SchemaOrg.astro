@@ -1,0 +1,165 @@
+---
+import { siteConfig } from '../../../site.config';
+
+interface Props {
+  type: 'website' | 'article' | 'review';
+  title: string;
+  description: string;
+  url: string;
+  publishDate?: Date;
+  updatedDate?: Date;
+  author?: { name: string; bio: string };
+  heroImage?: string;
+  heroImageAlt?: string;
+  gameTitle?: string;
+  steamAppId?: number;
+  rating?: number;
+  tags?: string[];
+  faq?: { question: string; answer: string }[];
+  breadcrumbs?: { name: string; url: string }[];
+}
+
+const {
+  type, title, description, url, publishDate, updatedDate,
+  author, heroImage, heroImageAlt, gameTitle, steamAppId,
+  rating, tags, faq, breadcrumbs,
+} = Astro.props;
+
+const schemas: object[] = [];
+
+// Organization (every page)
+schemas.push({
+  '@type': 'Organization',
+  name: siteConfig.organization.name,
+  url: siteConfig.url,
+  logo: {
+    '@type': 'ImageObject',
+    url: `${siteConfig.url}${siteConfig.organization.logo}`,
+  },
+  ...(siteConfig.organization.sameAs.length > 0 && { sameAs: siteConfig.organization.sameAs }),
+});
+
+// WebSite (homepage only)
+if (type === 'website') {
+  schemas.push({
+    '@type': 'WebSite',
+    name: siteConfig.name,
+    url: siteConfig.url,
+    description: siteConfig.description,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${siteConfig.url}/search?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  });
+}
+
+// NewsArticle
+if (type === 'article' && publishDate) {
+  const articleSchema: Record<string, unknown> = {
+    '@type': 'NewsArticle',
+    headline: title,
+    description,
+    url,
+    datePublished: publishDate.toISOString(),
+    ...(updatedDate && { dateModified: updatedDate.toISOString() }),
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+    publisher: {
+      '@type': 'Organization',
+      name: siteConfig.organization.name,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${siteConfig.url}${siteConfig.organization.logo}`,
+      },
+    },
+  };
+
+  if (author) {
+    articleSchema.author = {
+      '@type': 'Person',
+      name: author.name,
+      description: author.bio,
+    };
+  }
+
+  if (heroImage) {
+    articleSchema.image = {
+      '@type': 'ImageObject',
+      url: heroImage.startsWith('http') ? heroImage : `${siteConfig.url}${heroImage}`,
+      ...(heroImageAlt && { caption: heroImageAlt }),
+    };
+  }
+
+  if (tags && tags.length > 0) {
+    articleSchema.keywords = tags.join(', ');
+  }
+
+  if (gameTitle) {
+    articleSchema.about = {
+      '@type': 'VideoGame',
+      name: gameTitle,
+      ...(steamAppId && { url: `https://store.steampowered.com/app/${steamAppId}` }),
+    };
+  }
+
+  schemas.push(articleSchema);
+}
+
+// Review
+if (type === 'review' && rating !== undefined) {
+  schemas.push({
+    '@type': 'Review',
+    itemReviewed: {
+      '@type': 'VideoGame',
+      name: gameTitle,
+      ...(steamAppId && { url: `https://store.steampowered.com/app/${steamAppId}` }),
+    },
+    reviewRating: {
+      '@type': 'Rating',
+      ratingValue: rating,
+      bestRating: 10,
+      worstRating: 1,
+    },
+    author: author ? { '@type': 'Person', name: author.name } : undefined,
+    publisher: {
+      '@type': 'Organization',
+      name: siteConfig.organization.name,
+    },
+  });
+}
+
+// BreadcrumbList
+if (breadcrumbs && breadcrumbs.length > 0) {
+  schemas.push({
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((crumb, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: crumb.name,
+      item: crumb.url,
+    })),
+  });
+}
+
+// FAQPage
+if (faq && faq.length > 0) {
+  schemas.push({
+    '@type': 'FAQPage',
+    mainEntity: faq.map((item) => ({
+      '@type': 'Question',
+      name: item.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: item.answer,
+      },
+    })),
+  });
+}
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': schemas,
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

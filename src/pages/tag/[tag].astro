@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ui/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+import { siteConfig } from '../../../site.config';
+
+export async function getStaticPaths() {
+  const allNews = await getCollection('news', ({ data }) => !data.draft);
+  const allReviews = await getCollection('reviews', ({ data }) => !data.draft);
+  const allGuides = await getCollection('guides', ({ data }) => !data.draft);
+
+  const tagMap = new Map<string, any[]>();
+
+  for (const post of allNews) {
+    for (const tag of post.data.tags) {
+      const slug = tag.toLowerCase().replace(/\s+/g, '-');
+      if (!tagMap.has(slug)) tagMap.set(slug, []);
+      tagMap.get(slug)!.push({ ...post, _collection: 'news', _tagLabel: tag });
+    }
+  }
+  for (const post of allReviews) {
+    for (const tag of post.data.tags) {
+      const slug = tag.toLowerCase().replace(/\s+/g, '-');
+      if (!tagMap.has(slug)) tagMap.set(slug, []);
+      tagMap.get(slug)!.push({ ...post, _collection: 'reviews', _tagLabel: tag });
+    }
+  }
+  for (const post of allGuides) {
+    for (const tag of post.data.tags) {
+      const slug = tag.toLowerCase().replace(/\s+/g, '-');
+      if (!tagMap.has(slug)) tagMap.set(slug, []);
+      tagMap.get(slug)!.push({ ...post, _collection: 'guides', _tagLabel: tag });
+    }
+  }
+
+  return Array.from(tagMap.entries()).map(([slug, posts]) => ({
+    params: { tag: slug },
+    props: {
+      posts: posts.sort((a: any, b: any) => b.data.publishDate.getTime() - a.data.publishDate.getTime()),
+      tagLabel: posts[0]._tagLabel,
+    },
+  }));
+}
+
+const { posts, tagLabel } = Astro.props;
+---
+
+<BaseLayout
+  title={`Tag: ${tagLabel}`}
+  description={`Articles tagged with "${tagLabel}" on ${siteConfig.name}`}
+>
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-8">
+    <h1 class="font-display font-bold text-4xl mb-2">
+      <span class="text-text-muted">#</span> {tagLabel}
+    </h1>
+    <p class="text-text-secondary mb-8">{posts.length} article{posts.length !== 1 ? 's' : ''}</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {posts.map((post: any) => (
+        <ArticleCard
+          title={post.data.title}
+          description={post.data.description}
+          heroImage={post.data.heroImage}
+          heroImageAlt={post.data.heroImageAlt}
+          category={post.data.category}
+          publishDate={post.data.publishDate}
+          readingTime={post.data.readingTime}
+          slug={post.slug}
+          collection={post._collection}
+          gameTitle={post.data.gameTitle}
+        />
+      ))}
+    </div>
+  </div>
+</BaseLayout>

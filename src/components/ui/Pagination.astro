@@ -1,0 +1,44 @@
+---
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  baseUrl: string;
+}
+
+const { currentPage, totalPages, baseUrl } = Astro.props;
+
+const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+const prevUrl = currentPage > 1 ? `${baseUrl}${currentPage - 1 === 1 ? '' : `/${currentPage - 1}`}` : null;
+const nextUrl = currentPage < totalPages ? `${baseUrl}/${currentPage + 1}` : null;
+---
+
+{totalPages > 1 && (
+  <nav aria-label="Pagination" class="flex items-center justify-center gap-2 mt-12">
+    {prevUrl ? (
+      <a href={prevUrl} class="btn btn-secondary text-sm" aria-label="Previous page">&larr; Prev</a>
+    ) : (
+      <span class="btn text-sm text-text-muted cursor-not-allowed opacity-50">&larr; Prev</span>
+    )}
+
+    {pages.map(page => (
+      <a
+        href={page === 1 ? baseUrl : `${baseUrl}/${page}`}
+        class:list={[
+          'w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors',
+          page === currentPage
+            ? 'bg-steam text-void'
+            : 'text-text-secondary hover:text-text-primary hover:bg-elevated',
+        ]}
+        aria-current={page === currentPage ? 'page' : undefined}
+      >
+        {page}
+      </a>
+    ))}
+
+    {nextUrl ? (
+      <a href={nextUrl} class="btn btn-secondary text-sm" aria-label="Next page">Next &rarr;</a>
+    ) : (
+      <span class="btn text-sm text-text-muted cursor-not-allowed opacity-50">Next &rarr;</span>
+    )}
+  </nav>
+)}

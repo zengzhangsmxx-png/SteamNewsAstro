@@ -1,0 +1,38 @@
+---
+import { getCollection } from 'astro:content';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+
+export async function getStaticPaths() {
+  const reviews = await getCollection('reviews', ({ data }) => !data.draft);
+  return reviews.map(post => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await post.render();
+---
+
+<ArticleLayout
+  title={post.data.title}
+  description={post.data.description}
+  publishDate={post.data.publishDate}
+  heroImage={post.data.heroImage}
+  heroImageAlt={post.data.heroImageAlt}
+  category={post.data.category}
+  tags={post.data.tags}
+  gameTitle={post.data.gameTitle}
+  steamAppId={post.data.steamAppId}
+  author={post.data.author}
+  readingTime={post.data.readingTime}
+  tldr={post.data.tldr}
+  faq={post.data.faq}
+  rating={post.data.rating}
+  pros={post.data.pros}
+  cons={post.data.cons}
+  headings={headings}
+  collection="reviews"
+>
+  <Content />
+</ArticleLayout>

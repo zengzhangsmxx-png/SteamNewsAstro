@@ -1,0 +1,80 @@
+---
+import { siteConfig } from '../../../site.config';
+import Search from './Search.astro';
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="fixed top-0 left-0 right-0 z-50 glass border-b border-border-accent">
+  <div class="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-2.5 text-text-primary hover:text-steam transition-colors">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" class="text-steam">
+        <circle cx="14" cy="14" r="12" stroke="currentColor" stroke-width="2" />
+        <path d="M14 6L14 14L20 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <circle cx="14" cy="14" r="3" fill="currentColor" />
+      </svg>
+      <span class="font-display font-bold text-xl tracking-tight">{siteConfig.name}</span>
+    </a>
+
+    <!-- Nav + Search -->
+    <div class="flex items-center gap-1">
+      <nav class="hidden md:flex items-center gap-1">
+        {siteConfig.nav.map(item => (
+          <a
+            href={item.href}
+            class:list={[
+              'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+              currentPath.startsWith(item.href)
+                ? 'text-steam bg-steam/10'
+                : 'text-text-secondary hover:text-text-primary hover:bg-elevated',
+            ]}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+      <Search />
+      <!-- Mobile menu button -->
+      <button
+        id="mobile-menu-btn"
+        class="md:hidden p-2 text-text-secondary hover:text-text-primary"
+        aria-label="Toggle menu"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile nav -->
+  <div id="mobile-menu" class="hidden md:hidden border-t border-border-subtle">
+    <nav class="px-4 py-3 space-y-1">
+      {siteConfig.nav.map(item => (
+        <a
+          href={item.href}
+          class:list={[
+            'block px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+            currentPath.startsWith(item.href)
+              ? 'text-steam bg-steam/10'
+              : 'text-text-secondary hover:text-text-primary hover:bg-elevated',
+          ]}
+        >
+          {item.label}
+        </a>
+      ))}
+    </nav>
+  </div>
+</header>
+
+<!-- Spacer for fixed header -->
+<div class="h-16" />
+
+<script>
+  const btn = document.getElementById('mobile-menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  btn?.addEventListener('click', () => menu?.classList.toggle('hidden'));
+</script>
