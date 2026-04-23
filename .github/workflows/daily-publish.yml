@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: rm -f package-lock.json && npm install
 
+      - name: Create cache and logs directories
+        run: mkdir -p cache logs
+
       - name: Run pipeline
         run: |
           npx tsx scripts/orchestrate.ts \
