@@ -131,3 +131,26 @@
     text-wrap: balance;
   }
 }
+
+/* Prose dark theme overrides */
+.prose table {
+  @apply border-collapse w-full;
+}
+.prose thead th {
+  @apply bg-elevated text-text-primary border-b border-border-subtle px-3 py-2 text-left text-sm font-semibold;
+}
+.prose tbody td {
+  @apply border-b border-border-subtle px-3 py-2 text-sm text-text-secondary;
+}
+.prose tbody tr:hover {
+  @apply bg-surface;
+}
+.prose img {
+  @apply rounded-lg;
+}
+.prose hr {
+  @apply border-border-subtle;
+}
+.prose blockquote {
+  @apply border-l-steam/40 bg-surface/50 rounded-r-lg py-1 px-4;
+}
