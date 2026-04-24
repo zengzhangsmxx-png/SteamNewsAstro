@@ -19,7 +19,8 @@
     "translate:all": "tsx scripts/translate.ts --lang all",
     "predict": "tsx scripts/predict-hotness.ts",
     "predict:snapshot": "tsx scripts/predict-hotness.ts --snapshot",
-    "notify:test": "tsx scripts/notify.ts"
+    "notify:test": "tsx scripts/notify.ts",
+    "n8n:api": "tsx scripts/n8n-api.ts"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.2.0",
