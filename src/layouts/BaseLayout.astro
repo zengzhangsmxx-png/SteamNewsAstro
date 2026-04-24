@@ -4,6 +4,7 @@ import SchemaOrg from '../components/seo/SchemaOrg.astro';
 import OpenGraph from '../components/seo/OpenGraph.astro';
 import Navbar from '../components/ui/Navbar.astro';
 import Footer from '../components/ui/Footer.astro';
+import { getLocaleFromUrl, getDir, getAlternateUrls, localePath } from '../i18n/utils';
 import '../styles/global.css';
 
 interface Props {
@@ -31,18 +32,33 @@ const {
   rating, faq, breadcrumbs, noindex = false,
 } = Astro.props;
 
+const lang = getLocaleFromUrl(Astro.url);
+const dir = getDir(lang);
 const canonicalUrl = new URL(Astro.url.pathname, siteConfig.url).toString();
 const pageTitle = title === siteConfig.name ? title : `${title} | ${siteConfig.name}`;
+
+// Build hreflang base path (strip language prefix to get the content path)
+const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
+const basePath = lang === 'en'
+  ? Astro.url.pathname
+  : '/' + pathSegments.slice(1).join('/') || '/';
+const alternateUrls = getAlternateUrls(basePath, siteConfig.url);
 ---
 
 <!doctype html>
-<html lang={siteConfig.language}>
+<html lang={lang} dir={dir}>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href={canonicalUrl} />
   <link rel="alternate" type="application/rss+xml" title={`${siteConfig.name} RSS`} href="/rss.xml" />
+
+  {/* Hreflang tags for all language versions */}
+  {alternateUrls.map(alt => (
+    <link rel="alternate" hreflang={alt.lang} href={alt.href} />
+  ))}
+  <link rel="alternate" hreflang="x-default" href={`${siteConfig.url}${basePath}`} />
 
   <title>{pageTitle}</title>
   <meta name="description" content={description} />

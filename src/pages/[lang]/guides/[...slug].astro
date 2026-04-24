@@ -1,0 +1,47 @@
+---
+import { getCollection } from 'astro:content';
+import ArticleLayout from '../../../layouts/ArticleLayout.astro';
+import { supportedLocales, type Locale } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  const paths: any[] = [];
+  const langs = supportedLocales.filter(l => l !== 'en') as Locale[];
+
+  for (const lang of langs) {
+    try {
+      const articles = await getCollection(`guides-${lang}` as any, ({ data }: any) => !data.draft);
+      for (const post of articles) {
+        paths.push({
+          params: { lang, slug: post.slug },
+          props: { post, lang },
+        });
+      }
+    } catch { /* collection may not exist yet */ }
+  }
+
+  return paths;
+}
+
+const { post, lang } = Astro.props;
+const { Content, headings } = await post.render();
+---
+
+<ArticleLayout
+  title={post.data.title}
+  description={post.data.description}
+  publishDate={post.data.publishDate}
+  heroImage={post.data.heroImage}
+  heroImageAlt={post.data.heroImageAlt}
+  category={post.data.category}
+  tags={post.data.tags}
+  gameTitle={post.data.gameTitle}
+  steamAppId={post.data.steamAppId}
+  author={post.data.author}
+  readingTime={post.data.readingTime}
+  tldr={post.data.tldr}
+  faq={post.data.faq}
+  headings={headings}
+  collection="guides"
+>
+  <Content />
+</ArticleLayout>

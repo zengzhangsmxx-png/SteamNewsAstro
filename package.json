@@ -13,7 +13,10 @@
     "fetch-trending": "tsx scripts/fetch-trending.ts",
     "generate:dynamic": "tsx scripts/generate-dynamic.ts",
     "orchestrate": "tsx scripts/orchestrate.ts",
-    "auto": "tsx scripts/orchestrate.ts --mode full --limit 10"
+    "auto": "tsx scripts/orchestrate.ts --mode full --limit 10",
+    "translate": "tsx scripts/translate.ts",
+    "translate:zh": "tsx scripts/translate.ts --lang zh",
+    "translate:all": "tsx scripts/translate.ts --lang all"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.2.0",

@@ -1,0 +1,210 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HeroCard from '../../components/ui/HeroCard.astro';
+import ArticleCard from '../../components/ui/ArticleCard.astro';
+import Sidebar from '../../components/ui/Sidebar.astro';
+import { getCollection } from 'astro:content';
+import { siteConfig } from '../../../site.config';
+import { supportedLocales, t, localePath, type Locale } from '../../i18n/utils';
+
+export async function getStaticPaths() {
+  const paths: any[] = [];
+  const langs = supportedLocales.filter(l => l !== 'en') as Locale[];
+
+  for (const lang of langs) {
+    let news: any[] = [];
+    let reviews: any[] = [];
+    let guides: any[] = [];
+
+    try { news = await getCollection(`news-${lang}` as any, ({ data }: any) => !data.draft); } catch {}
+    try { reviews = await getCollection(`reviews-${lang}` as any, ({ data }: any) => !data.draft); } catch {}
+    try { guides = await getCollection(`guides-${lang}` as any, ({ data }: any) => !data.draft); } catch {}
+
+    paths.push({ params: { lang }, props: { lang, news, reviews, guides } });
+  }
+
+  return paths;
+}
+
+const { lang, news, reviews, guides } = Astro.props;
+const tr = t(lang);
+
+const sortedNews = news.sort((a: any, b: any) => b.data.publishDate.getTime() - a.data.publishDate.getTime());
+const sortedReviews = reviews.sort((a: any, b: any) => b.data.publishDate.getTime() - a.data.publishDate.getTime());
+const sortedGuides = guides.sort((a: any, b: any) => b.data.publishDate.getTime() - a.data.publishDate.getTime());
+
+const featured = sortedNews.find((p: any) => p.data.featured) || sortedNews[0];
+const restNews = sortedNews.filter((p: any) => p.slug !== featured?.slug).slice(0, 4);
+const latestReviews = sortedReviews.slice(0, 3);
+const latestGuides = sortedGuides.slice(0, 3);
+---
+
+<BaseLayout
+  title={siteConfig.name}
+  description={tr.meta.siteDescription}
+  type="website"
+>
+  {featured && (
+    <section class="max-w-7xl mx-auto px-4 md:px-6 pt-8 pb-4">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2">
+          <HeroCard
+            title={featured.data.title}
+            description={featured.data.description}
+            heroImage={featured.data.heroImage}
+            heroImageAlt={featured.data.heroImageAlt}
+            category={featured.data.category}
+            publishDate={featured.data.publishDate}
+            readingTime={featured.data.readingTime}
+            slug={featured.slug}
+            collection="news"
+            gameTitle={featured.data.gameTitle}
+          />
+        </div>
+        <div class="flex flex-col gap-5">
+          {restNews.slice(0, 2).map((post: any) => (
+            <a href={localePath(`/news/${post.slug}`, lang)} class="card group flex-1 flex flex-col">
+              <div class="relative overflow-hidden aspect-[16/9]">
+                <img src={post.data.heroImage} alt={post.data.heroImageAlt}
+                  class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                <div class="absolute inset-0 bg-gradient-to-t from-void/80 to-transparent" />
+                <div class="absolute bottom-0 left-0 right-0 p-4">
+                  <h3 class="font-display font-semibold text-sm leading-snug text-text-primary group-hover:text-steam transition-colors line-clamp-2">
+                    {post.data.title}
+                  </h3>
+                  <span class="text-text-muted text-xs mt-1 block">{post.data.gameTitle}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-6">
+    <div class="flex flex-col lg:flex-row gap-10">
+      <div class="flex-1 min-w-0 space-y-12">
+
+        {restNews.length > 0 && (
+          <section>
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="font-display font-bold text-xl flex items-center gap-2">
+                <span class="w-1 h-5 bg-steam rounded-full inline-block"></span>
+                {tr.home.latestNews}
+              </h2>
+              <a href={localePath('/news', lang)} class="text-steam hover:text-steam-deep text-sm font-medium transition-colors">
+                {tr.home.viewAll} &rarr;
+              </a>
+            </div>
+            <div class="space-y-4">
+              {restNews.map((post: any) => (
+                <a href={localePath(`/news/${post.slug}`, lang)} class="card group flex flex-col sm:flex-row overflow-hidden">
+                  <div class="sm:w-48 shrink-0 aspect-video sm:aspect-auto overflow-hidden">
+                    <img src={post.data.heroImage} alt={post.data.heroImageAlt}
+                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                  </div>
+                  <div class="p-4 flex flex-col justify-center">
+                    <h3 class="font-display font-semibold text-base leading-snug text-text-primary group-hover:text-steam transition-colors line-clamp-2">
+                      {post.data.title}
+                    </h3>
+                    <p class="text-text-secondary text-sm mt-1.5 line-clamp-1 hidden sm:block">{post.data.description}</p>
+                    <div class="flex items-center gap-2 mt-2 text-text-muted text-xs">
+                      <span>{post.data.gameTitle}</span>
+                      <span>&middot;</span>
+                      <span>{post.data.readingTime} {tr.article.minRead}</span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {latestReviews.length > 0 && (
+          <section>
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="font-display font-bold text-xl flex items-center gap-2">
+                <span class="w-1 h-5 bg-hot rounded-full inline-block"></span>
+                {tr.nav.reviews}
+              </h2>
+              <a href={localePath('/reviews', lang)} class="text-steam hover:text-steam-deep text-sm font-medium transition-colors">
+                {tr.home.viewAll} &rarr;
+              </a>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {latestReviews.map((post: any) => (
+                <ArticleCard
+                  title={post.data.title}
+                  description={post.data.description}
+                  heroImage={post.data.heroImage}
+                  heroImageAlt={post.data.heroImageAlt}
+                  category={post.data.category}
+                  publishDate={post.data.publishDate}
+                  readingTime={post.data.readingTime}
+                  slug={post.slug}
+                  collection="reviews"
+                  gameTitle={post.data.gameTitle}
+                  rating={post.data.rating}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {latestGuides.length > 0 && (
+          <section>
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="font-display font-bold text-xl flex items-center gap-2">
+                <span class="w-1 h-5 bg-accent-success rounded-full inline-block"></span>
+                {tr.nav.guides}
+              </h2>
+              <a href={localePath('/guides', lang)} class="text-steam hover:text-steam-deep text-sm font-medium transition-colors">
+                {tr.home.viewAll} &rarr;
+              </a>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {latestGuides.map((post: any) => (
+                <ArticleCard
+                  title={post.data.title}
+                  description={post.data.description}
+                  heroImage={post.data.heroImage}
+                  heroImageAlt={post.data.heroImageAlt}
+                  category={post.data.category}
+                  publishDate={post.data.publishDate}
+                  readingTime={post.data.readingTime}
+                  slug={post.slug}
+                  collection="guides"
+                  gameTitle={post.data.gameTitle}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {news.length === 0 && reviews.length === 0 && guides.length === 0 && (
+          <div class="text-center py-20">
+            <p class="text-text-muted text-lg">Content coming soon in this language.</p>
+            <a href="/" class="text-steam hover:text-steam-deep mt-4 inline-block">
+              &larr; English version
+            </a>
+          </div>
+        )}
+
+      </div>
+
+      <aside class="w-full lg:w-72 shrink-0">
+        <div class="lg:sticky lg:top-20 space-y-6">
+          <Sidebar />
+          <div class="card p-5 text-center">
+            <h3 class="font-display font-bold text-sm uppercase tracking-wider text-steam mb-2">{tr.home.stayUpdated}</h3>
+            <p class="text-text-secondary text-xs mb-3">{tr.home.rssDesc}</p>
+            <a href={localePath('/rss.xml', lang)} class="btn btn-primary text-sm w-full">
+              {tr.home.subscribeRss}
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>

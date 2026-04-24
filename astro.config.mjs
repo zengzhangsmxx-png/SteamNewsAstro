@@ -10,7 +10,24 @@ export default defineConfig({
   integrations: [
     tailwind(),
     mdx(),
-    sitemap(),
+    sitemap({
+      i18n: {
+        defaultLocale: 'en',
+        locales: {
+          en: 'en-US',
+          zh: 'zh-CN',
+          ja: 'ja-JP',
+          ko: 'ko-KR',
+          es: 'es-ES',
+          fr: 'fr-FR',
+          de: 'de-DE',
+          pt: 'pt-BR',
+          ru: 'ru-RU',
+          ar: 'ar-SA',
+          tr: 'tr-TR',
+        },
+      },
+    }),
   ],
   image: {
     service: {

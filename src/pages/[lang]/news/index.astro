@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ArticleCard from '../../../components/ui/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+import { supportedLocales, t, type Locale } from '../../../i18n/utils';
+
+export async function getStaticPaths() {
+  const paths: any[] = [];
+  const langs = supportedLocales.filter(l => l !== 'en') as Locale[];
+
+  for (const lang of langs) {
+    try {
+      const articles = await getCollection(`news-${lang}` as any, ({ data }: any) => !data.draft);
+      paths.push({ params: { lang }, props: { lang, articles } });
+    } catch {
+      paths.push({ params: { lang }, props: { lang, articles: [] } });
+    }
+  }
+
+  return paths;
+}
+
+const { lang, articles } = Astro.props;
+const sorted = articles.sort((a: any, b: any) => b.data.publishDate.getTime() - a.data.publishDate.getTime());
+const tr = t(lang);
+---
+
+<BaseLayout
+  title={tr.nav.news}
+  description={tr.meta.siteDescription}
+>
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-8">
+    <h1 class="font-display font-bold text-4xl mb-8">{tr.nav.news}</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {sorted.map((post: any) => (
+        <ArticleCard
+          title={post.data.title}
+          description={post.data.description}
+          heroImage={post.data.heroImage}
+          heroImageAlt={post.data.heroImageAlt}
+          category={post.data.category}
+          publishDate={post.data.publishDate}
+          readingTime={post.data.readingTime}
+          slug={post.slug}
+          collection="news"
+          gameTitle={post.data.gameTitle}
+        />
+      ))}
+    </div>
+  </div>
+</BaseLayout>

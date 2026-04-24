@@ -9,9 +9,10 @@ interface StepResult {
   error?: string;
 }
 
-function parseArgs(): { mode: Mode; limit: number } {
+function parseArgs(): { mode: Mode; limit: number; lang: string } {
   let mode: Mode = 'full';
   let limit = 10;
+  let lang = 'all';
 
   for (let i = 2; i < process.argv.length; i++) {
     if (process.argv[i] === '--mode' && process.argv[i + 1]) {
@@ -22,6 +23,10 @@ function parseArgs(): { mode: Mode; limit: number } {
       limit = parseInt(process.argv[i + 1], 10);
       i++;
     }
+    if (process.argv[i] === '--lang' && process.argv[i + 1]) {
+      lang = process.argv[i + 1];
+      i++;
+    }
   }
 
   if (!['full', 'content-only', 'build-only'].includes(mode)) {
@@ -29,7 +34,7 @@ function parseArgs(): { mode: Mode; limit: number } {
     process.exit(1);
   }
 
-  return { mode, limit };
+  return { mode, limit, lang };
 }
 
 function runStep(name: string, command: string): StepResult {
@@ -57,16 +62,17 @@ function runStep(name: string, command: string): StepResult {
 }
 
 function main() {
-  const { mode, limit } = parseArgs();
+  const { mode, limit, lang } = parseArgs();
   const totalStart = Date.now();
   const results: StepResult[] = [];
 
-  console.log(`Orchestrate: mode=${mode}, limit=${limit}`);
+  console.log(`Orchestrate: mode=${mode}, limit=${limit}, lang=${lang}`);
   console.log(`Started at ${new Date().toISOString()}\n`);
 
   if (mode === 'full' || mode === 'content-only') {
     results.push(runStep('Fetch Trending', 'npx tsx scripts/fetch-trending.ts'));
     results.push(runStep('Generate Articles', `npx tsx scripts/generate-dynamic.ts --limit ${limit}`));
+    results.push(runStep('Translate Articles', `npx tsx scripts/translate.ts --lang ${lang} --limit ${limit}`));
   }
 
   if (mode === 'full') {

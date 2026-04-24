@@ -1,9 +1,27 @@
+export const supportedLocales = ['en', 'zh', 'ja', 'ko', 'es', 'fr', 'de', 'pt', 'ru', 'ar', 'tr'] as const;
+export type Locale = (typeof supportedLocales)[number];
+
+export const localeConfig: Record<Locale, { label: string; locale: string; dir: 'ltr' | 'rtl' }> = {
+  en: { label: 'English', locale: 'en_US', dir: 'ltr' },
+  zh: { label: '中文', locale: 'zh_CN', dir: 'ltr' },
+  ja: { label: '日本語', locale: 'ja_JP', dir: 'ltr' },
+  ko: { label: '한국어', locale: 'ko_KR', dir: 'ltr' },
+  es: { label: 'Español', locale: 'es_ES', dir: 'ltr' },
+  fr: { label: 'Français', locale: 'fr_FR', dir: 'ltr' },
+  de: { label: 'Deutsch', locale: 'de_DE', dir: 'ltr' },
+  pt: { label: 'Português', locale: 'pt_BR', dir: 'ltr' },
+  ru: { label: 'Русский', locale: 'ru_RU', dir: 'ltr' },
+  ar: { label: 'العربية', locale: 'ar_SA', dir: 'rtl' },
+  tr: { label: 'Türkçe', locale: 'tr_TR', dir: 'ltr' },
+};
+
 export const siteConfig = {
   name: 'SteamPulse',
   url: 'https://steamnewsdaily.com',
   description: 'Your daily source for Steam gaming news, reviews, and guides. Covering the latest PC game releases, updates, and community highlights.',
   language: 'en',
   locale: 'en_US',
+  defaultLocale: 'en' as Locale,
 
   steam: {
     appIds: [730, 570, 440, 1172470, 892970, 1245620, 1091500, 553850, 1174180],
