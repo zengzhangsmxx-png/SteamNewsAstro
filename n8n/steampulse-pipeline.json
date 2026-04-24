@@ -1,5 +1,5 @@
 {
-  "name": "SteamPulse Daily Pipeline",
+  "name": "SteamPulse Daily Pipeline (GitHub Actions)",
   "nodes": [
     {
       "parameters": {
@@ -15,227 +15,187 @@
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "={{ $env.STEAMPULSE_API_URL }}/fetch-trending?force=true",
+        "method": "POST",
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_OWNER }}/{{ $env.GITHUB_REPO }}/actions/workflows/daily-publish.yml/dispatches",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"ref\": \"main\", \"inputs\": { \"mode\": \"full\", \"limit\": \"10\", \"lang\": \"all\" } }",
         "options": {
-          "timeout": 300000
-        },
-        "headerParameters": {
-          "parameters": [
-            { "name": "x-api-secret", "value": "={{ $env.STEAMPULSE_API_SECRET }}" }
-          ]
+          "timeout": 10000
         }
       },
-      "id": "fetch_trending",
-      "name": "1. Fetch Trending Games",
+      "id": "trigger_workflow",
+      "name": "1. Trigger GitHub Actions",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [250, 300]
+      "position": [250, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "GitHub Token"
+        }
+      }
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "={{ $env.STEAMPULSE_API_URL }}/predict?top=20",
-        "options": {
-          "timeout": 300000
-        },
-        "headerParameters": {
-          "parameters": [
-            { "name": "x-api-secret", "value": "={{ $env.STEAMPULSE_API_SECRET }}" }
-          ]
-        }
+        "amount": 30,
+        "unit": "seconds"
       },
-      "id": "predict",
-      "name": "2. Predict Hotness",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "id": "wait_start",
+      "name": "2. Wait 30s for Run to Start",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
       "position": [500, 300]
     },
     {
       "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_OWNER }}/{{ $env.GITHUB_REPO }}/actions/workflows/daily-publish.yml/runs?per_page=1&status=in_progress",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get_run",
+      "name": "3. Get Active Run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [750, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "GitHub Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.github.com/repos/{{ $env.GITHUB_OWNER }}/{{ $env.GITHUB_REPO }}/actions/runs/{{ $json.workflow_runs[0].id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "poll_status",
+      "name": "4. Poll Run Status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "GitHub Token"
+        }
+      }
+    },
+    {
+      "parameters": {
         "conditions": {
-          "boolean": [],
-          "number": [
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
             {
-              "value1": "={{ $json.predictions[0]?.score || 0 }}",
-              "operation": "largerEqual",
-              "value2": 30
+              "id": "status_check",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "completed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
             }
-          ]
+          ],
+          "combinator": "and"
         }
       },
-      "id": "hotness_check",
-      "name": "3. Hot Enough?",
+      "id": "is_complete",
+      "name": "5. Run Complete?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [750, 300]
+      "position": [1250, 300]
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "={{ $env.STEAMPULSE_API_URL }}/generate?limit=10",
-        "options": {
-          "timeout": 600000
-        },
-        "headerParameters": {
-          "parameters": [
-            { "name": "x-api-secret", "value": "={{ $env.STEAMPULSE_API_SECRET }}" }
-          ]
-        }
+        "amount": 60,
+        "unit": "seconds"
       },
-      "id": "generate",
-      "name": "4. Generate Articles",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1000, 200]
+      "id": "wait_poll",
+      "name": "Wait 60s & Retry",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1250, 500]
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "={{ $env.STEAMPULSE_API_URL }}/translate?lang=all&limit=5",
-        "options": {
-          "timeout": 600000
-        },
-        "headerParameters": {
-          "parameters": [
-            { "name": "x-api-secret", "value": "={{ $env.STEAMPULSE_API_SECRET }}" }
-          ]
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "conclusion_check",
+              "leftValue": "={{ $json.conclusion }}",
+              "rightValue": "success",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
         }
       },
-      "id": "translate",
-      "name": "5. Translate Articles",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1250, 200]
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "={{ $env.STEAMPULSE_API_URL }}/build",
-        "options": {
-          "timeout": 300000
-        },
-        "headerParameters": {
-          "parameters": [
-            { "name": "x-api-secret", "value": "={{ $env.STEAMPULSE_API_SECRET }}" }
-          ]
-        }
-      },
-      "id": "build",
-      "name": "6. Build Site",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
+      "id": "is_success",
+      "name": "6. Run Succeeded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
       "position": [1500, 200]
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "={{ $env.STEAMPULSE_API_URL }}/git-commit",
-        "options": {
-          "timeout": 60000
-        },
-        "headerParameters": {
-          "parameters": [
-            { "name": "x-api-secret", "value": "={{ $env.STEAMPULSE_API_SECRET }}" }
-          ]
-        }
-      },
-      "id": "git_commit",
-      "name": "7. Git Commit",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [1750, 200]
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "={{ $env.STEAMPULSE_API_URL }}/git-push",
-        "options": {
-          "timeout": 60000
-        },
-        "headerParameters": {
-          "parameters": [
-            { "name": "x-api-secret", "value": "={{ $env.STEAMPULSE_API_SECRET }}" }
-          ]
-        }
-      },
-      "id": "git_push",
-      "name": "8. Git Push",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [2000, 200]
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "={{ $env.STEAMPULSE_API_URL }}/deploy",
-        "options": {
-          "timeout": 300000
-        },
-        "headerParameters": {
-          "parameters": [
-            { "name": "x-api-secret", "value": "={{ $env.STEAMPULSE_API_SECRET }}" }
-          ]
-        }
-      },
-      "id": "deploy",
-      "name": "9. Deploy to Cloudflare",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [2250, 200]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.SLACK_WEBHOOK_URL }}",
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "text",
-              "value": "=SteamPulse Pipeline Complete ✅\n\nGenerated: {{ $node['4. Generate Articles'].json.generated || 0 }} articles\nTranslated: {{ $node['5. Translate Articles'].json.translated || 0 }} articles\nBuild: {{ $node['6. Build Site'].json.ok ? 'Success' : 'Failed' }}\nDeploy: {{ $node['9. Deploy to Cloudflare'].json.ok ? 'Success' : 'Failed' }}\n\nTop predicted game: {{ $node['2. Predict Hotness'].json.predictions[0]?.name || 'N/A' }} (score: {{ $node['2. Predict Hotness'].json.predictions[0]?.score || 0 }})"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={ \"text\": \"SteamPulse Pipeline Complete ✅\\n\\nGitHub Actions run succeeded.\\nRun URL: {{ $node['4. Poll Run Status'].json.html_url }}\\n\\nSite: https://steamnewsdaily.com\" }",
         "options": {}
       },
-      "id": "slack_notify",
-      "name": "10. Slack Notify",
+      "id": "slack_success",
+      "name": "7a. Slack: Success",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2500, 200]
+      "position": [1750, 100]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "content",
-              "value": "=🎮 **SteamPulse Daily Update**\n\n📝 {{ $node['4. Generate Articles'].json.generated || 0 }} new articles published\n🌐 {{ $node['5. Translate Articles'].json.translated || 0 }} translations added\n🔥 Hottest game: {{ $node['2. Predict Hotness'].json.predictions[0]?.name || 'N/A' }}\n\n👉 https://steamnewsdaily.com"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={ \"content\": \"🎮 **SteamPulse Daily Update**\\n\\n✅ Pipeline completed successfully\\n🔗 {{ $node['4. Poll Run Status'].json.html_url }}\\n\\n👉 https://steamnewsdaily.com\" }",
         "options": {}
       },
-      "id": "discord_notify",
-      "name": "11. Discord Post",
+      "id": "discord_success",
+      "name": "7b. Discord: Success",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2500, 400]
+      "position": [1750, 300]
     },
     {
       "parameters": {
-        "text": "=🎮 SteamPulse Daily: {{ $node['4. Generate Articles'].json.generated || 0 }} new articles\n\n🔥 Trending: {{ $node['2. Predict Hotness'].json.predictions[0]?.name || '' }}\n\n#Steam #Gaming #PCGaming\n\nhttps://steamnewsdaily.com",
+        "text": "=🎮 SteamPulse updated! New gaming articles published today.\n\n#Steam #Gaming #PCGaming\n\nhttps://steamnewsdaily.com",
         "additionalFields": {}
       },
       "id": "twitter_post",
-      "name": "12. Twitter Post",
+      "name": "7c. Twitter Post",
       "type": "n8n-nodes-base.twitter",
       "typeVersion": 2,
-      "position": [2500, 600],
+      "position": [1750, 500],
       "credentials": {
         "twitterOAuth2Api": {
           "id": "",
@@ -248,72 +208,62 @@
         "method": "POST",
         "url": "={{ $env.SLACK_WEBHOOK_URL }}",
         "sendBody": true,
-        "bodyParameters": {
-          "parameters": [
-            {
-              "name": "text",
-              "value": "=SteamPulse Pipeline Skipped ⏭️\n\nNo games above hotness threshold (score < 30).\nTop game: {{ $json.predictions[0]?.name || 'N/A' }} (score: {{ $json.predictions[0]?.score || 0 }})\n\nNext run: tomorrow 9:00 AM"
-            }
-          ]
-        },
+        "specifyBody": "json",
+        "jsonBody": "={ \"text\": \"SteamPulse Pipeline FAILED ❌\\n\\nConclusion: {{ $node['4. Poll Run Status'].json.conclusion }}\\nRun URL: {{ $node['4. Poll Run Status'].json.html_url }}\" }",
         "options": {}
       },
-      "id": "skip_notify",
-      "name": "Skip: Low Hotness",
+      "id": "slack_fail",
+      "name": "7d. Slack: Failed",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1000, 450]
+      "position": [1750, 700]
     }
   ],
   "connections": {
     "Daily 9AM Trigger": {
-      "main": [[{ "node": "1. Fetch Trending Games", "type": "main", "index": 0 }]]
+      "main": [[{ "node": "1. Trigger GitHub Actions", "type": "main", "index": 0 }]]
     },
-    "1. Fetch Trending Games": {
-      "main": [[{ "node": "2. Predict Hotness", "type": "main", "index": 0 }]]
+    "1. Trigger GitHub Actions": {
+      "main": [[{ "node": "2. Wait 30s for Run to Start", "type": "main", "index": 0 }]]
     },
-    "2. Predict Hotness": {
-      "main": [[{ "node": "3. Hot Enough?", "type": "main", "index": 0 }]]
+    "2. Wait 30s for Run to Start": {
+      "main": [[{ "node": "3. Get Active Run", "type": "main", "index": 0 }]]
     },
-    "3. Hot Enough?": {
+    "3. Get Active Run": {
+      "main": [[{ "node": "4. Poll Run Status", "type": "main", "index": 0 }]]
+    },
+    "4. Poll Run Status": {
+      "main": [[{ "node": "5. Run Complete?", "type": "main", "index": 0 }]]
+    },
+    "5. Run Complete?": {
       "main": [
-        [{ "node": "4. Generate Articles", "type": "main", "index": 0 }],
-        [{ "node": "Skip: Low Hotness", "type": "main", "index": 0 }]
+        [{ "node": "6. Run Succeeded?", "type": "main", "index": 0 }],
+        [{ "node": "Wait 60s & Retry", "type": "main", "index": 0 }]
       ]
     },
-    "4. Generate Articles": {
-      "main": [[{ "node": "5. Translate Articles", "type": "main", "index": 0 }]]
+    "Wait 60s & Retry": {
+      "main": [[{ "node": "4. Poll Run Status", "type": "main", "index": 0 }]]
     },
-    "5. Translate Articles": {
-      "main": [[{ "node": "6. Build Site", "type": "main", "index": 0 }]]
-    },
-    "6. Build Site": {
-      "main": [[{ "node": "7. Git Commit", "type": "main", "index": 0 }]]
-    },
-    "7. Git Commit": {
-      "main": [[{ "node": "8. Git Push", "type": "main", "index": 0 }]]
-    },
-    "8. Git Push": {
-      "main": [[{ "node": "9. Deploy to Cloudflare", "type": "main", "index": 0 }]]
-    },
-    "9. Deploy to Cloudflare": {
+    "6. Run Succeeded?": {
       "main": [
         [
-          { "node": "10. Slack Notify", "type": "main", "index": 0 },
-          { "node": "11. Discord Post", "type": "main", "index": 0 },
-          { "node": "12. Twitter Post", "type": "main", "index": 0 }
-        ]
+          { "node": "7a. Slack: Success", "type": "main", "index": 0 },
+          { "node": "7b. Discord: Success", "type": "main", "index": 0 },
+          { "node": "7c. Twitter Post", "type": "main", "index": 0 }
+        ],
+        [{ "node": "7d. Slack: Failed", "type": "main", "index": 0 }]
       ]
     }
   },
   "settings": {
     "executionOrder": "v1",
     "saveManualExecutions": true,
-    "callerPolicy": "workflowsFromSameOwner"
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 1800
   },
   "tags": [
     { "name": "steampulse" },
     { "name": "automation" },
-    { "name": "content-pipeline" }
+    { "name": "github-actions" }
   ]
 }
