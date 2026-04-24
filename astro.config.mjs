@@ -2,6 +2,7 @@ import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
 import tailwind from '@astrojs/tailwind';
+import { remarkAutoLinks } from './src/plugins/remark-auto-links.mjs';
 
 export default defineConfig({
   site: 'https://steamnewsdaily.com',
@@ -35,6 +36,7 @@ export default defineConfig({
     },
   },
   markdown: {
+    remarkPlugins: [remarkAutoLinks],
     shikiConfig: {
       theme: 'github-dark',
     },

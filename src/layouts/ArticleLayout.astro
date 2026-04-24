@@ -8,6 +8,7 @@ import TagChip from '../components/ui/TagChip.astro';
 import ReadingProgress from '../components/ui/ReadingProgress.astro';
 import TableOfContents from '../components/ui/TableOfContents.astro';
 import RelatedArticles from '../components/ui/RelatedArticles.astro';
+import CrossLinks from '../components/ui/CrossLinks.astro';
 import { siteConfig } from '../../site.config';
 import { format } from 'date-fns';
 
@@ -196,8 +197,11 @@ const categoryColor = categoryConfig?.color || '#66c0f4';
           </div>
         </div>
 
+        <!-- Cross-collection links for same game -->
+        <CrossLinks gameTitle={gameTitle} currentSlug={Astro.url.pathname.split('/').filter(Boolean).pop() || ''} currentCollection={collection} />
+
         <!-- Related Articles -->
-        <RelatedArticles currentSlug={Astro.url.pathname.split('/').filter(Boolean).pop() || ''} tags={tags} collection={collection} />
+        <RelatedArticles currentSlug={Astro.url.pathname.split('/').filter(Boolean).pop() || ''} tags={tags} gameTitle={gameTitle} category={category} collection={collection} />
       </article>
 
       <!-- Sidebar -->

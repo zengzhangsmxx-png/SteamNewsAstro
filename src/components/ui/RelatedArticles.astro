@@ -5,20 +5,27 @@ import { getCollection } from 'astro:content';
 interface Props {
   currentSlug: string;
   tags: string[];
+  gameTitle?: string;
+  category?: string;
   collection: 'news' | 'reviews' | 'guides';
   limit?: number;
 }
 
-const { currentSlug, tags, collection, limit = 3 } = Astro.props;
+const { currentSlug, tags, gameTitle, category, collection, limit = 3 } = Astro.props;
 
 const allPosts = await getCollection(collection, ({ data }) => !data.draft);
 
-// Score posts by tag overlap
 const scored = allPosts
   .filter(p => p.slug !== currentSlug)
   .map(p => {
-    const overlap = p.data.tags.filter(t => tags.includes(t)).length;
-    return { post: p, score: overlap };
+    let score = 0;
+    // Same game = strongest signal (+10)
+    if (gameTitle && p.data.gameTitle === gameTitle) score += 10;
+    // Tag overlap (+2 per shared tag)
+    score += p.data.tags.filter((t: string) => tags.includes(t)).length * 2;
+    // Same category (+1)
+    if (category && p.data.category === category) score += 1;
+    return { post: p, score };
   })
   .sort((a, b) => b.score - a.score || b.post.data.publishDate.getTime() - a.post.data.publishDate.getTime())
   .slice(0, limit);

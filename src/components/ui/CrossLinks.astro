@@ -1,0 +1,55 @@
+---
+import { getCollection } from 'astro:content';
+
+interface Props {
+  gameTitle: string;
+  currentSlug: string;
+  currentCollection: 'news' | 'reviews' | 'guides';
+}
+
+const { gameTitle, currentSlug, currentCollection } = Astro.props;
+
+const collections = ['news', 'reviews', 'guides'] as const;
+const crossLinks: { title: string; href: string; type: string; date: Date }[] = [];
+
+for (const col of collections) {
+  if (col === currentCollection) continue;
+  const posts = await getCollection(col, ({ data }) => !data.draft && data.gameTitle === gameTitle);
+  for (const p of posts) {
+    crossLinks.push({
+      title: p.data.title,
+      href: `/${col}/${p.slug}/`,
+      type: col === 'reviews' ? 'Review' : col === 'guides' ? 'Guide' : 'News',
+      date: p.data.publishDate,
+    });
+  }
+}
+
+crossLinks.sort((a, b) => b.date.getTime() - a.date.getTime());
+const display = crossLinks.slice(0, 6);
+---
+
+{display.length > 0 && (
+  <section class="mt-10 p-6 card rounded-xl">
+    <h3 class="font-display font-bold text-lg mb-4">
+      More about {gameTitle}
+    </h3>
+    <ul class="space-y-3">
+      {display.map(link => (
+        <li class="flex items-start gap-3">
+          <span class:list={[
+            'shrink-0 mt-0.5 px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wider',
+            link.type === 'Review' && 'bg-orange-500/15 text-orange-400',
+            link.type === 'Guide' && 'bg-emerald-500/15 text-emerald-400',
+            link.type === 'News' && 'bg-sky-500/15 text-sky-400',
+          ]}>
+            {link.type}
+          </span>
+          <a href={link.href} class="text-text-secondary hover:text-steam transition-colors text-sm leading-snug">
+            {link.title}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
