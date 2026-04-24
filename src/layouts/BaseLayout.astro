@@ -52,7 +52,7 @@ const alternateUrls = getAlternateUrls(basePath, siteConfig.url);
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="canonical" href={canonicalUrl} />
-  <link rel="alternate" type="application/rss+xml" title={`${siteConfig.name} RSS`} href="/rss.xml" />
+  <link rel="alternate" type="application/rss+xml" title={`${siteConfig.name} RSS`} href={lang === 'en' ? '/rss.xml' : `/${lang}/rss.xml`} />
 
   {/* Hreflang tags for all language versions */}
   {alternateUrls.map(alt => (
@@ -71,16 +71,25 @@ const alternateUrls = getAlternateUrls(basePath, siteConfig.url);
 
   <!-- Analytics -->
   {siteConfig.analytics.plausible && (
-    <script defer data-domain={siteConfig.analytics.plausible} src="https://plausible.io/js/script.js" is:inline></script>
+    <script defer data-domain={siteConfig.analytics.plausible} src="https://plausible.io/js/script.tagged-events.pageview-props.js" is:inline></script>
+    <script is:inline define:vars={{ plausibleLang: lang, plausibleType: type }}>
+      window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) };
+    </script>
+    <meta name="plausible-props" data-language={lang} data-content-type={type} />
   )}
   {siteConfig.analytics.googleAnalytics && (
     <Fragment>
       <script async src={`https://www.googletagmanager.com/gtag/js?id=${siteConfig.analytics.googleAnalytics}`} is:inline></script>
-      <script is:inline define:vars={{ gaId: siteConfig.analytics.googleAnalytics }}>
+      <script is:inline define:vars={{ gaId: siteConfig.analytics.googleAnalytics, gaLang: lang, gaType: type, gaGame: gameTitle || '' }}>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());
-        gtag('config', gaId);
+        gtag('config', gaId, {
+          custom_map: { dimension1: 'content_language', dimension2: 'content_type', dimension3: 'game_title' },
+          content_language: gaLang,
+          content_type: gaType,
+          game_title: gaGame,
+        });
       </script>
     </Fragment>
   )}

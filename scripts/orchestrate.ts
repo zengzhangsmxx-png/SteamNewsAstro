@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import { notify } from './notify.js';
 
 type Mode = 'full' | 'content-only' | 'build-only';
 
@@ -61,7 +62,7 @@ function runStep(name: string, command: string): StepResult {
   }
 }
 
-function main() {
+async function main() {
   const { mode, limit, lang } = parseArgs();
   const totalStart = Date.now();
   const results: StepResult[] = [];
@@ -71,6 +72,7 @@ function main() {
 
   if (mode === 'full' || mode === 'content-only') {
     results.push(runStep('Fetch Trending', 'npx tsx scripts/fetch-trending.ts'));
+    results.push(runStep('Predict Hotness', 'npx tsx scripts/predict-hotness.ts --snapshot'));
     results.push(runStep('Generate Articles', `npx tsx scripts/generate-dynamic.ts --limit ${limit}`));
     results.push(runStep('Translate Articles', `npx tsx scripts/translate.ts --lang ${lang} --limit ${limit}`));
   }
@@ -104,8 +106,11 @@ function main() {
     for (const r of results.filter((r) => !r.success)) {
       console.log(`  - ${r.name}: ${r.error}`);
     }
-    process.exit(1);
   }
+
+  await notify(results, mode);
+
+  if (failed > 0) process.exit(1);
 }
 
 main();

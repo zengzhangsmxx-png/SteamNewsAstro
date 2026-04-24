@@ -16,7 +16,10 @@
     "auto": "tsx scripts/orchestrate.ts --mode full --limit 10",
     "translate": "tsx scripts/translate.ts",
     "translate:zh": "tsx scripts/translate.ts --lang zh",
-    "translate:all": "tsx scripts/translate.ts --lang all"
+    "translate:all": "tsx scripts/translate.ts --lang all",
+    "predict": "tsx scripts/predict-hotness.ts",
+    "predict:snapshot": "tsx scripts/predict-hotness.ts --snapshot",
+    "notify:test": "tsx scripts/notify.ts"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.2.0",
