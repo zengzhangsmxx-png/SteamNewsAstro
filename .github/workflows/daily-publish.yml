@@ -72,7 +72,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=${{ secrets.CLOUDFLARE_PROJECT_NAME || 'steampulse' }}
+          command: pages deploy dist --project-name=steampulse --commit-dirty=true
 
       - name: Upload logs
         if: always()
