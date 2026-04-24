@@ -2,6 +2,31 @@ import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  label: string,
+  maxRetries = 3,
+  baseDelayMs = 5000,
+): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const status = err?.status || err?.statusCode || 0;
+      const isRetryable = status === 429 || status === 503 || status === 529 || status >= 500;
+
+      if (!isRetryable || attempt === maxRetries) {
+        throw err;
+      }
+
+      const delay = baseDelayMs * Math.pow(2, attempt) + Math.random() * 1000;
+      console.log(`  ⏳ ${label}: ${status} error, retry ${attempt + 1}/${maxRetries} in ${(delay / 1000).toFixed(1)}s...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw new Error('unreachable');
+}
+
 // Load .env file if present (no dependency needed)
 const envPath = join(process.cwd(), '.env');
 if (existsSync(envPath)) {
@@ -271,11 +296,14 @@ ${buildArticlePrompt(req)}
 
 Output ONLY the raw markdown with YAML frontmatter. No code fences, no explanations.`;
 
-  const response = await client.messages.create({
-    model,
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: userContent }],
-  });
+  const response = await withRetry(
+    () => client.messages.create({
+      model,
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: userContent }],
+    }),
+    `generate:${req.topic || req.gameTitle}`,
+  );
 
   const text = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')

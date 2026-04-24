@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
-import { CONTENT_DIR } from './shared.js';
+import { CONTENT_DIR, withRetry } from './shared.js';
 
 // Load .env
 const envPath = join(process.cwd(), '.env');
@@ -88,11 +88,14 @@ async function translateArticle(
 
 ${buildTranslatePrompt(content, lang, langName)}`;
 
-  const response = await client.messages.create({
-    model,
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: userContent }],
-  });
+  const response = await withRetry(
+    () => client.messages.create({
+      model,
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: userContent }],
+    }),
+    `translate:${slug}→${lang}`,
+  );
 
   let text = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
