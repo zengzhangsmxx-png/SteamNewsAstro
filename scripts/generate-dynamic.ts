@@ -8,6 +8,7 @@ import {
   slugify,
   generateArticle,
   writeArticle,
+  getRandomNewsTopic,
 } from './shared.js';
 import { loadCache } from './fetch-trending.js';
 import { checkQuality } from './quality-check.js';
@@ -34,7 +35,7 @@ function getPublishedSlugs(): Set<string> {
   return slugs;
 }
 
-function buildRequests(games: GameData[]): ArticleRequest[] {
+function buildRequests(games: GameData[], diversify = true): ArticleRequest[] {
   const requests: ArticleRequest[] = [];
 
   for (const game of games) {
@@ -43,16 +44,33 @@ function buildRequests(games: GameData[]): ArticleRequest[] {
     if (game.developers[0]) tags.push(game.developers[0]);
     const safeTags = tags.slice(0, 8);
 
+    // Use diverse topic templates instead of fixed "Latest Updates and Player Trends"
+    const newsTopic = diversify
+      ? getRandomNewsTopic(game.name)
+      : `${game.name} Latest Updates and Player Trends`;
+
     requests.push({
       type: 'news',
       gameTitle: game.name,
       steamAppId: game.appId,
-      topic: `${game.name} Latest Updates and Player Trends`,
+      topic: newsTopic,
       category: 'news',
       tags: safeTags,
     });
 
-    if (players > 10000) {
+    // Generate multiple news articles per game with different topics
+    if (diversify && players > 5000) {
+      requests.push({
+        type: 'news',
+        gameTitle: game.name,
+        steamAppId: game.appId,
+        topic: getRandomNewsTopic(game.name),
+        category: 'update',
+        tags: safeTags,
+      });
+    }
+
+    if (players > 10000 || game.totalReviews! > 5000) {
       requests.push({
         type: 'review',
         gameTitle: game.name,
@@ -63,7 +81,7 @@ function buildRequests(games: GameData[]): ArticleRequest[] {
       });
     }
 
-    if (players > 50000) {
+    if (players > 50000 || game.totalReviews! > 20000) {
       requests.push({
         type: 'guide',
         gameTitle: game.name,
