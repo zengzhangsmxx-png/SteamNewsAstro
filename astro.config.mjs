@@ -5,7 +5,7 @@ import tailwind from '@astrojs/tailwind';
 import { remarkAutoLinks } from './src/plugins/remark-auto-links.mjs';
 
 export default defineConfig({
-  site: 'https://steamnewsdaily.com',
+  site: 'https://steampulse.pages.dev',
   output: 'static',
   prefetch: true,
   integrations: [

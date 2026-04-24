@@ -17,7 +17,7 @@ export const localeConfig: Record<Locale, { label: string; locale: string; dir: 
 
 export const siteConfig = {
   name: 'SteamPulse',
-  url: 'https://steamnewsdaily.com',
+  url: 'https://steampulse.pages.dev',
   description: 'Your daily source for Steam gaming news, reviews, and guides. Covering the latest PC game releases, updates, and community highlights.',
   language: 'en',
   locale: 'en_US',
